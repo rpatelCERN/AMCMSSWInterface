@@ -3,7 +3,7 @@ AMSimulation
 This software package contains three subpackages useful to perform L1 track trigger simulation using the associative memory approach within the official CMSSW framework
 
 This package builds on top of a stand alone version developed here:
-See [wiki](https://github.com/jiafulow/SLHCL1TrackTriggerSimulations/wiki)
+See [wiki_jf](https://github.com/jiafulow/SLHCL1TrackTriggerSimulations/wiki)
 
 The initial code did
 - Configuration: for generating particle gun samples
