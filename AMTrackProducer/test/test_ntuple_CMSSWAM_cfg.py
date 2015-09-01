@@ -84,8 +84,11 @@ process.ana = cms.EDAnalyzer( 'TkTriggerParticleAnalzer' ,
  L1TkMuonsInputTag = cms.InputTag("L1TkMuonsMerge",""),
  GenPartInputTag=cms.InputTag("genParticles"),
  TrackPartTag=cms.InputTag("mix","MergedTrackTruth"),
-TTTracksInputTag=cms.InputTag("AMTrackProducer", "Level1TTTracks"),
-inputTagMC = cms.InputTag('TTTrackAssociatorForAM', 'Level1TTTracks'),
+ TTTracksInputTag=cms.InputTag("AMTrackProducer", "Level1TTTracks"),
+ inputTagMC = cms.InputTag('TTTrackAssociatorForAM', 'Level1TTTracks'),
+ L1TkElectronsInputTag = cms.InputTag("L1TkElectrons","EG"),
+ L1TkPhotonsInputTag= cms.InputTag("L1TkPhotons", "EG"),
+ ParticleType=cms.int32(13),
 )
 
 process.pAna = cms.Path( process.ana )

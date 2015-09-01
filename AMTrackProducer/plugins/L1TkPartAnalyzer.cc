@@ -101,7 +101,15 @@ class TkTriggerParticleAnalzer : public edm::EDAnalyzer {
 	std::vector<float>tk_pt; std::vector<float>tk_eta;  std::vector<float>tk_phi; std::vector<float>tk_z;
 	std::vector<float>tk_chi2; std::vector<int>tk_truth;
         std::vector<float>mu_pt; std::vector<float>mu_eta;  std::vector<float>mu_phi; std::vector<float>mu_z;
-	std::vector<float>muStandAlone_pt; 
+	std::vector<float>muStandAlone_pt; std::vector<float>muIso; 
+	std::vector<float>ele_pt; std::vector<float>ele_eta;  std::vector<float>ele_phi; std::vector<float>ele_z;
+	std::vector<float>eleIso;
+        std::vector<float>ele_tkpt; std::vector<float>ele_tketa;  std::vector<float>ele_tkphi;
+        std::vector<float>ele_calopt; std::vector<float>ele_caloeta;  std::vector<float>ele_calophi;
+
+        std::vector<float>pho_pt; std::vector<float>pho_eta;  std::vector<float>pho_phi;
+        std::vector<float>phoIso;
+        std::vector<float>pho_calopt; std::vector<float>pho_caloeta;  std::vector<float>pho_calophi;
 	TTree*AmMuons;
      // for L1TkMuonParticle
 
@@ -109,7 +117,11 @@ class TkTriggerParticleAnalzer : public edm::EDAnalyzer {
         edm::InputTag GenPartInputTag;
         edm::InputTag TrackPartInputTag;
 	edm::InputTag TTTracksInputTag;
-        edm::InputTag TTTracksAssocInputTag;	
+        edm::InputTag TTTracksAssocInputTag;
+	edm::InputTag L1TkElectronsInputTag;	
+        edm::InputTag L1TkPhotonsInputTag;	
+	int PDG;
+
 };
 
 //
@@ -133,7 +145,9 @@ TkTriggerParticleAnalzer::TkTriggerParticleAnalzer(const edm::ParameterSet& iCon
   TrackPartInputTag =iConfig.getParameter<edm::InputTag>("TrackPartTag");
   TTTracksInputTag  =iConfig.getParameter<edm::InputTag>("TTTracksInputTag");
   TTTracksAssocInputTag=iConfig.getParameter<edm::InputTag>("inputTagMC");
-
+  L1TkElectronsInputTag = iConfig.getParameter<edm::InputTag>("L1TkElectronsInputTag");
+  L1TkPhotonsInputTag= iConfig.getParameter<edm::InputTag>("L1TkPhotonsInputTag");
+  PDG=iConfig.getParameter< int >("ParticleType");
 }
 
 
@@ -173,6 +187,15 @@ iEvent.getByLabel(TTTracksInputTag,TTTrackHandle);
 
 edm::Handle< TTTrackAssociationMap< Ref_PixelDigi_ > > MCTruthTTTrackHandle;
  iEvent.getByLabel(TTTracksAssocInputTag,MCTruthTTTrackHandle);
+
+edm::Handle<L1TkElectronParticleCollection> L1TkElectronsHandle;
+iEvent.getByLabel(L1TkElectronsInputTag, L1TkElectronsHandle);
+std::vector<L1TkElectronParticle>::const_iterator eleIter ;
+
+
+edm::Handle<L1TkEmParticleCollection> L1TkPhotonsHandle;
+iEvent.getByLabel(L1TkPhotonsInputTag, L1TkPhotonsHandle);
+std::vector<L1TkEmParticle>::const_iterator phoIter ;
 /*
 if(GenHandle.isValid()){
 //std::cout<<"Gen Part Handle "<<std::endl;
@@ -196,14 +219,26 @@ mu_phi.resize(0);
 mu_pt.resize(0);
 muStandAlone_pt.resize(0);
 mu_z.resize(0);
+muIso.resize(0);
+
+ele_pt.resize(0); 
+ele_eta.resize(0);  
+ele_phi.resize(0); 
+ele_z.resize(0);
+eleIso.resize(0);
 
 
+pho_pt.resize(0);
+pho_eta.resize(0);
+pho_phi.resize(0);
+phoIso.resize(0);
+      pho_calopt.resize(0); pho_caloeta.resize(0);  pho_calophi.resize(0);
 //std::vector<TTRoad> roads=matcher.makeRoads(iEvent);
 
 if(TrackingParticleHandle.isValid()){
    std::vector< TrackingParticle >::const_iterator iterTP;
 for(iterTP=TrackingParticleHandle->begin(); iterTP!=TrackingParticleHandle->end(); ++iterTP){
-	if(abs(iterTP->pdgId())!=13)continue;
+	if(abs(iterTP->pdgId())!=PDG)continue;
 	//pt, eta, phi, z		
 	tp_eta=iterTP->eta();
 	tp_phi=iterTP->phi();
@@ -248,11 +283,76 @@ tk_truth.push_back(tmp_trk_genuine);
 	mu_eta.push_back(eta);
 	mu_phi.push_back(phi);
         mu_z.push_back(zvtx);
-	//if(!muIter->getMuRef().isNull())
-	//std::cout<<" Tk MUon "<<pt <<" stand-alone "<<muIter->getMuExtendedRef()->pt()<<std::endl;
+	//compute isolation from Tracks
+	float isolation=0;
+	for(unsigned t=0; t<tk_z.size(); ++t){
+	   float dEta=fabs(tk_eta[t]-eta);
+           float dPhi=fabs(tk_phi[t]-phi);
+	   float dR=sqrt(dEta*dEta+dPhi*dPhi);
+	   float dZ=fabs(zvtx-tk_z[t]);
+	   if(dZ>1.0)continue;
+	   if(dR>0.3)continue;
+	   isolation+=tk_pt[t];
+	}
+	   muIso.push_back(isolation);	
+	    
     }
  }
+if ( L1TkElectronsHandle.isValid() ) {
+for (eleIter = L1TkElectronsHandle -> begin(); eleIter != L1TkElectronsHandle->end(); ++eleIter) {
+	 float et = eleIter -> pt();
+	 float phi = eleIter -> phi();
+	 float eta = eleIter -> eta();
+	 float isolation=eleIter -> getTrkIsol() ;
+        ele_pt.push_back(et);
+	ele_eta.push_back(eta);
+	ele_phi.push_back(phi);
+	eleIso.push_back(isolation);
 
+	 const edm::Ref< L1EmParticleCollection > EGref = eleIter -> getEGRef();
+
+	 if ( EGref.isNonnull() ) {
+
+	float et_L1Calo = EGref -> et();
+	float eta_calo = EGref -> eta();
+	float phi_calo = EGref -> phi();
+	   ele_calopt.push_back(et_L1Calo);
+           ele_calophi.push_back(phi_calo);
+           ele_caloeta.push_back(eta_calo);
+	}	
+	const edm::Ptr< L1TkTrackType > TrkRef = eleIter -> getTrkPtr();
+	if ( TrkRef.isNonnull() ) {
+	   float pt_track = TrkRef -> getMomentum().perp();
+           float phi_track = TrkRef -> getMomentum().phi();
+           float eta_track = TrkRef -> getMomentum().eta();
+           float ztrack = TrkRef -> getPOCA().z();
+	   ele_tkpt.push_back(pt_track);
+           ele_tkphi.push_back(phi_track);
+           ele_tketa.push_back(eta_track);
+	   ele_z.push_back(ztrack);
+	}
+     }
+  }
+if ( L1TkPhotonsHandle.isValid() ) {
+for (phoIter = L1TkPhotonsHandle -> begin(); phoIter != L1TkPhotonsHandle->end(); ++phoIter) {
+	float et = phoIter -> pt();
+	float phi = phoIter -> phi();
+	float eta = phoIter -> eta();
+	float trkisol = phoIter -> getTrkIsol() ;
+	const edm::Ref< L1EmParticleCollection > EGref = phoIter -> getEGRef();
+	float et_L1Calo = EGref -> et();
+	float eta_calo = EGref -> eta();
+	float phi_calo = EGref -> phi();
+	pho_pt.push_back(et);
+        pho_eta.push_back(eta);
+        pho_phi.push_back(phi);
+        phoIso.push_back(trkisol);
+        pho_calopt.push_back(et_L1Calo);
+        pho_caloeta.push_back(eta_calo);
+        pho_calophi.push_back(phi_calo);
+
+   }
+}
 
 AmMuons->Fill();
 
@@ -281,6 +381,30 @@ TkTriggerParticleAnalzer::beginJob()
     AmMuons->Branch("mu_pt", &mu_pt);
     AmMuons->Branch("muStandAlone_pt", &muStandAlone_pt);
     AmMuons->Branch("mu_z", &mu_z);
+    AmMuons->Branch("muIso", &muIso);
+
+    AmMuons->Branch("ele_eta", &ele_eta);
+    AmMuons->Branch("ele_phi", &ele_phi);
+    AmMuons->Branch("ele_pt", &ele_pt);
+    AmMuons->Branch("ele_z", &ele_z);
+    AmMuons->Branch("eleIso", &eleIso);
+
+    AmMuons->Branch("ele_tketa", &ele_tketa);
+    AmMuons->Branch("ele_tkphi", &ele_tkphi);
+    AmMuons->Branch("ele_tkpt", &ele_tkpt);
+
+    AmMuons->Branch("ele_caloeta", &ele_caloeta);
+    AmMuons->Branch("ele_calophi", &ele_calophi);
+    AmMuons->Branch("ele_calopt", &ele_calopt);
+
+
+    AmMuons->Branch("pho_eta", &pho_eta);
+    AmMuons->Branch("pho_phi", &pho_phi);
+    AmMuons->Branch("pho_pt", &pho_pt);
+    AmMuons->Branch("phoIso", &phoIso);
+    AmMuons->Branch("pho_caloeta", &pho_caloeta);
+    AmMuons->Branch("pho_calophi", &pho_calophi);
+    AmMuons->Branch("pho_calopt", &pho_calopt);
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
