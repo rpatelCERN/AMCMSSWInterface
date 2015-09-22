@@ -227,6 +227,14 @@ ele_phi.resize(0);
 ele_z.resize(0);
 eleIso.resize(0);
 
+ele_calopt.resize(0);
+ele_calophi.resize(0);
+ele_caloeta.resize(0);
+
+
+ele_tkpt.resize(0);
+ele_tketa.resize(0);
+ele_tkphi.resize(0);
 
 pho_pt.resize(0);
 pho_eta.resize(0);
@@ -291,9 +299,10 @@ tk_truth.push_back(tmp_trk_genuine);
 	   float dR=sqrt(dEta*dEta+dPhi*dPhi);
 	   float dZ=fabs(zvtx-tk_z[t]);
 	   if(dZ>1.0)continue;
-	   if(dR>0.3)continue;
+	   if(dR>0.3  || dR<0.01)continue; 
 	   isolation+=tk_pt[t];
 	}
+	   std::cout<<"Muon Iso "<<isolation<<std::endl;
 	   muIso.push_back(isolation);	
 	    
     }

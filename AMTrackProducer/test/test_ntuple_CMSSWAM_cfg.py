@@ -7,7 +7,10 @@ from AMCMSSWInterface.AMTrackProducer.CommandLineParams import CommandLineParams
 
 ## MessageLogger
 parameters = CommandLineParams()
-inputFiles = parameters.value("inputFiles",'file:/fdata/hepx/store/user/rish/CMSSW_6_2_0_SLHC25_patch3/src/Muons/SingleMuonNoPU_tt27_10.root')
+inputFiles = parameters.value("inputFiles",
+'file:/fdata/hepx/store/user/rish/NeuGun/NeutrinoGunFullMC_E2023TTI_PU140_10.root'
+#'file:/fdata/hepx/store/user/rish/CMSSW_6_2_0_SLHC25_patch3/src/SingleMuonPU_tt27_%s.root'
+)
 outputFile=parameters.value("outputFile","test_ntuple.root")
 mode=parameters.value("mode","AM")
 maxEvents=parameters.value("maxEvents", -1)
@@ -93,6 +96,9 @@ process.ana = cms.EDAnalyzer( 'TkTriggerParticleAnalzer' ,
 
 process.pAna = cms.Path( process.ana )
 
+
+
+
 process.load("SLHCUpgradeSimulations.L1TrackTrigger.L1TkEmParticleProducer_cfi")
 process.load("SLHCUpgradeSimulations.L1TrackTrigger.L1TkElectronTrackProducer_cfi")
 if mode == "AM":
@@ -116,6 +122,16 @@ process.L1TkElectronsLoose.TrackEGammaDeltaPhi = cms.vdouble(0.07, 0.0, 0.0)
 process.L1TkElectronsLoose.TrackEGammaDeltaR = cms.vdouble(0.12, 0.0, 0.0)
 process.L1TkElectronsLoose.TrackMinPt = cms.double( 3.0 )
 process.pElectronsLoose = cms.Path( process.L1TkElectronsLoose)
+AMTrackInputTag = cms.InputTag("AMTrackProducer", "Level1TTTracks")
+if mode != "AM":AMTrackInputTag = cms.InputTag("TTTracksFromPixelDigis", "Level1TTTracks")
+	
 
-
+from SLHCUpgradeSimulations.L1TrackTrigger.l1TkMuonsExt_cfi import l1TkMuonsExt
+l1TkMuonsExtCSC = l1TkMuonsExt.clone(
+		  L1MuonsInputTag = cms.InputTag("l1extraMuExtended", "csc"),
+		  
+	       	  L1TrackInputTag = AMTrackInputTag,
+		  #ETAMIN = cms.double(1.1),
+		  )
+#process.schedule = cms.Schedule(process.p)
 process.schedule = cms.Schedule(process.p, process.TTAssociator_step,process.slhccalo,process.L1Reco,process.pMuons,process.pL1TkPhotons,process.pElectrons,process.pL1TkIsoElectrons,process.pElectronsLoose,process.pAna)

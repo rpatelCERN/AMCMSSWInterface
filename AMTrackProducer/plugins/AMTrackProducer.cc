@@ -116,6 +116,7 @@ AMTrackProducer::AMTrackProducer(const edm::ParameterSet& iConfig) {
 void AMTrackProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
     //std::auto_ptr<std::vector<float> > dummies(new std::vector<float>());
 //  typedef TTStubAssociationMap<Ref_PixelDigi_> assocmap_stub;
+
   std::auto_ptr< std::vector< TTTrack< Ref_PixelDigi_ > > > L1TkTracksForOutput( new std::vector< TTTrack< Ref_PixelDigi_ > > );
 	 edm::Handle<edmNew::DetSetVector<TTStub<Ref_PixelDigi_> > > pixelDigiTTStubs;
         iEvent.getByLabel(StubsTag_, pixelDigiTTStubs);
@@ -173,6 +174,7 @@ double mMagneticFieldStrength = theMagneticField->inTesla(GlobalPoint(0,0,0)).z(
     
     PatternMatcher matcher(option);
     matcher.loadPatterns(option.bankfile);
+  
     std::vector<TTRoad> roads=matcher.makeRoads(iEvent);
     NRoads=roads.size();
  //   std::cout<<"Roads "<<roads.size()<<std::endl; 
@@ -214,8 +216,7 @@ double mMagneticFieldStrength = theMagneticField->inTesla(GlobalPoint(0,0,0)).z(
 	float consistency4par = StubPtConsistency::getConsistency(aTrack, theStackedGeometry, mMagneticFieldStrength, 4);
 	aTrack.setPOCA(POCA,4);
 	aTrack.setStubPtConsistency(consistency4par,4);
-         	
-   	if(ttracks[t].chi2Red()<5 && aTrack.getStubRefs().size()>=4)
+   	if(ttracks[t].chi2Red()<5 && aTrack.getStubRefs().size()>=4 && !ttracks[t].isGhost())
 	L1TkTracksForOutput->push_back( aTrack);
    }
 iEvent.put( L1TkTracksForOutput, "Level1TTTracks");
@@ -261,6 +262,7 @@ trk_class.resize(0);trk_ghost.resize(0);
 	}
     }
 	Amtracks->Fill();
+
 }
 void AMTrackProducer::initOptions(ProgramOption &option){
     option.bankfile="/fdata/hepx/store/user/rish/AMSIMULATION/CMSSW_6_2_0_SLHC25_patch3/src/SLHCL1TrackTriggerSimulations/AMSimulation/data/Patterns/patternBank_tt27_sf1_nz1_pt3_100M.root";
