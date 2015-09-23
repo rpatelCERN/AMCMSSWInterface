@@ -298,7 +298,7 @@ tk_truth.push_back(tmp_trk_genuine);
            float dPhi=fabs(tk_phi[t]-phi);
 	   float dR=sqrt(dEta*dEta+dPhi*dPhi);
 	   float dZ=fabs(zvtx-tk_z[t]);
-	   if(dZ>1.0)continue;
+	   if(dZ>2.0)continue;
 	   if(dR>0.3  || dR<0.01)continue; 
 	   isolation+=tk_pt[t];
 	}

@@ -50,7 +50,8 @@ process.load('Configuration.Geometry.GeometryExtended2023TTIReco_cff')
 process.load('Geometry.TrackerGeometryBuilder.StackedTrackerGeometry_cfi')
 process.load('SimTracker.TrackTriggerAssociation.TrackTriggerAssociator_cff')
 process.load("AMCMSSWInterface.AMTrackProducer.AMTrackingSequence_cff")
-process.load("SLHCUpgradeSimulations.L1TrackTrigger.L1TkMuonSequence_cfi")
+#process.load("SLHCUpgradeSimulations.L1TrackTrigger.L1TkMuonSequence_cfi")
+process.load("AMCMSSWInterface.AMTrackProducer.L1TkMuonSequence_cfi")
 #make two versions of the L1TKMuons
 process.p = cms.Path(process.AMTracks)
 
@@ -61,11 +62,6 @@ if mode == "AM":
 else:
 	process.TTTrackAssociatorForAM.TTTracks=cms.VInputTag( cms.InputTag("TTTracksFromPixelDigis", "Level1TTTracks"))
 process.TTAssociator_step = cms.Path(process.TTTrackAssociatorForAM)
-
-
-
-
-
 process.pMuons = cms.Path( process.L1TkMuons )
 
 process.load('Configuration/StandardSequences/L1HwVal_cff')
@@ -126,12 +122,18 @@ AMTrackInputTag = cms.InputTag("AMTrackProducer", "Level1TTTracks")
 if mode != "AM":AMTrackInputTag = cms.InputTag("TTTracksFromPixelDigis", "Level1TTTracks")
 	
 
-from SLHCUpgradeSimulations.L1TrackTrigger.l1TkMuonsExt_cfi import l1TkMuonsExt
-l1TkMuonsExtCSC = l1TkMuonsExt.clone(
-		  L1MuonsInputTag = cms.InputTag("l1extraMuExtended", "csc"),
+#from SLHCUpgradeSimulations.L1TrackTrigger.l1TkMuonsExt_cfi import l1TkMuonsExt
+#l1TkMuonsExtCSC = l1TkMuonsExt.clone(
+#		  L1MuonsInputTag = cms.InputTag("l1extraMuExtended", "csc"),
 		  
-	       	  L1TrackInputTag = AMTrackInputTag,
+#	       	  L1TrackInputTag = AMTrackInputTag,
 		  #ETAMIN = cms.double(1.1),
-		  )
+#		  )
+
 #process.schedule = cms.Schedule(process.p)
+#process.l1TkMuonsExtNoZCor = l1TkMuonsExt.clone( correctGMTPropForTkZ = cms.bool(False) )
+#process.l1TkMuonsExtCSCNoZCor = l1TkMuonsExtCSC.clone( correctGMTPropForTkZ = cms.bool(False) )
+#l1TkMuonsExtSequence = cms.Sequence (l1TkMuonsExt * l1TkMuonsExtCSC
+#                                     * l1TkMuonsExtNoZCor * l1TkMuonsExtCSCNoZCor)
+
 process.schedule = cms.Schedule(process.p, process.TTAssociator_step,process.slhccalo,process.L1Reco,process.pMuons,process.pL1TkPhotons,process.pElectrons,process.pL1TkIsoElectrons,process.pElectronsLoose,process.pAna)
