@@ -51,8 +51,10 @@ process.load('Geometry.TrackerGeometryBuilder.StackedTrackerGeometry_cfi')
 process.load('SimTracker.TrackTriggerAssociation.TrackTriggerAssociator_cff')
 process.load("AMCMSSWInterface.AMTrackProducer.AMTrackingSequence_cff")
 #process.load("SLHCUpgradeSimulations.L1TrackTrigger.L1TkMuonSequence_cfi")
-process.load("AMCMSSWInterface.AMTrackProducer.L1TkMuonSequence_cfi")
-#make two versions of the L1TKMuons
+if mode=="AM":
+	process.load("AMCMSSWInterface.AMTrackProducer.L1TkMuonSequence_cfi")
+else:
+	process.load("SLHCUpgradeSimulations.L1TrackTrigger.L1TkMuonSequence_cfi")
 process.p = cms.Path(process.AMTracks)
 
 #import the producers
