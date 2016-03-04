@@ -8,7 +8,7 @@ from AMCMSSWInterface.AMTrackProducer.CommandLineParams import CommandLineParams
 ## MessageLogger
 parameters = CommandLineParams()
 inputFiles = parameters.value("inputFiles",
-'file:/fdata/hepx/store/user/rish/NeuGun/NeutrinoGunFullMC_E2023TTI_PU140_10.root'
+'file:/fdata/hepx/store/user/rish/Muons/TTIMuons11.root'
 #'file:/fdata/hepx/store/user/rish/CMSSW_6_2_0_SLHC25_patch3/src/SingleMuonPU_tt27_%s.root'
 )
 outputFile=parameters.value("outputFile","test_ntuple.root")

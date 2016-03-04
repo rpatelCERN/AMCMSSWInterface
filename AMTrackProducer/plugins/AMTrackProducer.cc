@@ -27,10 +27,13 @@
 #include "FWCore/Framework/interface/ESHandle.h"
 #include "SLHCUpgradeSimulations/L1TrackTrigger/interface/StubPtConsistency.h"
 #include "SLHCL1TrackTriggerSimulations/NTupleTools/interface/MapTTStubs.h" 
+#include "SLHCL1TrackTriggerSimulations/AMSimulation/interface/TriggerTowerMap.h"
 //#include "SimTracker/TrackTriggerAssociation/interface/TTStubAssociationMap.h"
 //#include "SimTracker/TrackTriggerAssociation/interface/TTClusterAssociationMap.h"
 #include<TFile.h>
 #include<TTree.h>
+#include<TH2F.h>
+#include<map>
 class AMTrackProducer : public edm::EDProducer {
   public:
     explicit AMTrackProducer(const edm::ParameterSet&);
@@ -38,8 +41,15 @@ class AMTrackProducer : public edm::EDProducer {
   private:
     virtual void beginJob();
     virtual void produce(edm::Event&, const edm::EventSetup&);
-    virtual void initOptions(ProgramOption &option);
-  //  virtual void endJob();
+    virtual void initOptions(ProgramOption &option, int PBIndex);
+double genTrackDistanceLongitudinal(const double &z0, const double &cotTheta, const double &pt, const double &d0,
+const int charge, const double &B, const double &R, const double &z);
+double genTrackDistanceTransverse(const double &pt, const double &phi0, const double &d0,
+                                                 const int charge, const double &B, const double &phi, const double &R);
+int PatternBankMap(float eta, float phi);
+
+ virtual void endJob();
+
 ProgramOption option_;
 PatternMatcher* matcher_;
 
@@ -61,10 +71,18 @@ std::vector<int> StubsinRoad;
 std::vector<int> goodStubsinRoad;
 TTree*Amtracks;
 edm::InputTag StubsTag_;
+TH2F*TrigTowerMap;
+TriggerTowerMap * ttmap_;
+TFile*fin;
 };
 void AMTrackProducer::beginJob(){
- 
+   ttmap_ = new TriggerTowerMap();
+   ttmap_->read("/fdata/hepx/store/user/rish/AMSIMULATION/CMSSW_6_2_0_SLHC25_patch3/src/SLHCL1TrackTriggerSimulations/AMSimulation/data/"); 
+   fin=new TFile("TrigTowerMap.root", "READ");
+   TrigTowerMap=(TH2F*)fin->Get("h2TrigMap");
    edm::Service<TFileService> fs;
+
+
     Amtracks = fs->make<TTree>("Amtracks", "");
     Amtracks->Branch("tp_pt", &tp_pt);
     Amtracks->Branch("tp_eta", &tp_eta);
@@ -104,9 +122,10 @@ void AMTrackProducer::beginJob(){
 
 
 }
-//void AMTrackProducer::endJob(){
-
-//}
+void AMTrackProducer::endJob(){
+delete ttmap_;
+delete fin;
+}
 AMTrackProducer::AMTrackProducer(const edm::ParameterSet& iConfig) {
      StubsTag_ =(iConfig.getParameter<edm::InputTag>("inputTagStub"));
      produces< std::vector< TTTrack< Ref_PixelDigi_ > > >( "Level1TTTracks" ).setBranchAlias("Level1TTTracks");
@@ -123,7 +142,7 @@ void AMTrackProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
 
     std::auto_ptr<std::vector< TTTrack<Ref_PixelDigi_> > > TTTrackVector(new std::vector<TTTrack<Ref_PixelDigi_> >());
     ProgramOption option;
-
+/*
   edm::ESHandle<StackedTrackerGeometry> stackedGeometryHandle;
     iSetup.get<StackedTrackerGeometryRecord>().get(stackedGeometryHandle);
  const StackedTrackerGeometry *theStackedGeometry = stackedGeometryHandle.product();
@@ -131,10 +150,12 @@ edm::ESHandle<MagneticField> magneticFieldHandle;
 iSetup.get<IdealMagneticFieldRecord>().get(magneticFieldHandle);
 const MagneticField* theMagneticField = magneticFieldHandle.product();
 double mMagneticFieldStrength = theMagneticField->inTesla(GlobalPoint(0,0,0)).z();
-
+*/
     TTStubPlusTPReader reader(0);
+    //std::cout<<"Just declare constructor "<<std::endl;
+    if(!pixelDigiTTStubs.isValid())return;
     reader.init(iEvent);//just to get tracking particles
-    
+    //std::cout<<"After Init of TTStubPlusTPReader "<<std::endl; 
     NStubs= reader.vb_r->size();
     NStubs0=0;
     NStubs1=0;
@@ -150,6 +171,18 @@ double mMagneticFieldStrength = theMagneticField->inTesla(GlobalPoint(0,0,0)).z(
     NgoodStubs5=0;
     for (unsigned int istub=0; istub<reader.vb_r->size(); ++istub) {
 	float r=reader.vb_r->at(istub);
+          // unsigned moduleId = reader.vb_modId   ->at(istub);
+//	    int tpID=reader.vb_tpId->at(istub);
+	
+/*
+	    for( int t=0; t<48; ++t){
+	    std::map<unsigned, bool> ttrmap = ttmap_->getTriggerTowerReverseMap(t);
+            if (ttrmap.find(moduleId) != ttrmap.end()){
+			if(tpID>-1)std::cout<<"Module ID "<<tpID<<" Tower "<<t<<std::endl;	
+			break;
+		}
+*/
+	
 	if(r>20 && r<30)++NStubs0;
         if(r>20 && r<30 && reader.vb_tpId->at(istub)>=0)++NgoodStubs0;
         if(r>30 && r<40)++NStubs1;
@@ -162,24 +195,91 @@ double mMagneticFieldStrength = theMagneticField->inTesla(GlobalPoint(0,0,0)).z(
         if(r>70 && r<95 && reader.vb_tpId->at(istub)>=0)++NgoodStubs4;
         if(r>100)++NStubs5;
 	if(r>100  && reader.vb_tpId->at(istub)>=0)++NgoodStubs5;
+ 
     }
 
 
-
-    option.datadir = "/fdata/hepx/store/user/rish/AMSIMULATION/CMSSW_6_2_0_SLHC25_patch3/"; //std::getenv("CMSSW_BASE");
+    option.datadir = "/fdata/hepx/store/user/rish/AMSIMULATION/Forked/CMSSW_6_2_0_SLHC25_patch3/"; //std::getenv("CMSSW_BASE");
 
     option.datadir += "/src/SLHCL1TrackTriggerSimulations/AMSimulation/data/";
 
-    initOptions(option);
+    tp_pt.resize(0); tp_eta.resize(0); tp_phi.resize(0);
+    tp_vz.resize(0); tp_chgOverPt.resize(0);
+    int PBIndex=-1;
+
+for(unsigned int tp=0; tp<reader.vp2_pt->size(); ++tp){
+	if(abs(reader.vp2_pdgId->at(tp))!=13)continue;
+	PBIndex=PatternBankMap(reader.vp2_eta->at(tp),(reader.vp2_phi->at(tp)));
+	//std::cout<<"eta, phi "<<reader.vp2_eta->at(tp)<<", "<<reader.vp2_phi->at(tp)<<"MY pattern Bank "<<PBIndex<<std::endl;
+	
+	tp_pt.push_back(reader.vp2_pt->at(tp));	
+        tp_eta.push_back(reader.vp2_eta->at(tp));
+        tp_phi.push_back(reader.vp2_phi->at(tp));
+        tp_vz.push_back(reader.vp2_vz->at(tp));
+	tp_chgOverPt.push_back(reader.vp2_charge->at(tp)/reader.vp2_pt->at(tp));
+}
+    if( fabs(tp_eta[0])>1.42)return;
+    float rmax=0;
+  unsigned int inTower=0;
+   TH1F*OtherTowers=new TH1F("OtherTowers", "",48, 1, 49);
+   // std::vector<int>OtherTower;
+    for (unsigned int istub=0; istub<reader.vb_r->size(); ++istub) {
+	float r=reader.vb_r->at(istub);
+            unsigned moduleId = reader.vb_modId   ->at(istub);
+	    int tpID=reader.vb_tpId->at(istub);
+	    if(tpID<0)continue;
+	  
+	  //  for( int t=0; t<48; ++t){
+	    std::map<unsigned, bool> ttrmap = ttmap_->getTriggerTowerReverseMap(PBIndex);
+            if (ttrmap.find(moduleId) != ttrmap.end()){
+			//std::cout<<"Module ID "<<r<<" Tower "<<PBIndex<<std::endl;	
+			if(r>rmax){rmax=r; ++inTower;}
+			//float dz=genTrackDistanceLongitudinal( tp_vz[0], 
+		}
+	    else{
+		for( int t=0; t<48; ++t){
+			if(t==PBIndex)continue;
+			ttrmap = ttmap_->getTriggerTowerReverseMap(t);	
+			if(ttrmap.find(moduleId) != ttrmap.end()){
+				
+				if(r>rmax){rmax=r; OtherTowers->Fill(t);}		
+				std::cout<<"Module ID "<<r<<"Other Tower "<<t<<std::endl;	
+			}
+		}
+	}
+}
+
+    if(OtherTowers->Integral()>inTower){
+	   int binmax = OtherTowers->GetMaximumBin();
+   double x = OtherTowers->GetXaxis()->GetBinLowEdge(binmax);
+	std::cout<<"Other Tower with Hits "<<x<<std::endl;
+	PBIndex=x;
+//	for(unsigned i=0; i<OtherTower.size(); ++i)
+		//if(i>0 && OtherTower[i]===OtherTower[i-1]){
+	//		++frequency;
+	//`	}
+//		std::cout<<" Other Towers "<<OtherTower[i]<<std::endl;
+    }	
+      
+    std::cout<<"In Tower "<<inTower<<" Other Tower "<<OtherTowers->Integral()<<std::endl;
+    std::cout<<"PBIndex "<<PBIndex<<std::endl;
+
+    if(PBIndex<1)return;
+    initOptions(option,PBIndex);
     
-    PatternMatcher matcher(option);
-    matcher.loadPatterns(option.bankfile);
+    matcher_=new PatternMatcher(option);
+ 
+    matcher_->loadPatterns(option.bankfile);
   
-    std::vector<TTRoad> roads=matcher.makeRoads(iEvent);
-    NRoads=roads.size();
- //   std::cout<<"Roads "<<roads.size()<<std::endl; 
-    TrackFitter trackFit(option);
-    std::vector<TTTrack2>ttracks=trackFit.makeTracks(iEvent, roads);
+   // std::vector<TTRoad> roads=matcher_->makeRoads(iEvent);
+    delete matcher_;
+    delete OtherTowers;
+    //NRoads=roads.size();
+   // std::cout<<"Roads "<<roads.size()<<std::endl; 
+ /*   
+ TrackFitter trackFit(option);
+ //std::vector<TTTrack2>ttracks;
+   std::vector<TTTrack2>ttracks=trackFit.makeTracks(iEvent, roads);
     StubsinRoad.resize(0);
     goodStubsinRoad.resize(0);
     for (unsigned iroad=0; iroad<roads.size(); ++iroad) {
@@ -216,21 +316,12 @@ double mMagneticFieldStrength = theMagneticField->inTesla(GlobalPoint(0,0,0)).z(
 	float consistency4par = StubPtConsistency::getConsistency(aTrack, theStackedGeometry, mMagneticFieldStrength, 4);
 	aTrack.setPOCA(POCA,4);
 	aTrack.setStubPtConsistency(consistency4par,4);
-   	if(ttracks[t].chi2Red()<5 && aTrack.getStubRefs().size()>=4 && !ttracks[t].isGhost())
+   	//if(ttracks[t].chi2Red()<5 && aTrack.getStubRefs().size()>=4 && !ttracks[t].isGhost())
 	L1TkTracksForOutput->push_back( aTrack);
    }
-iEvent.put( L1TkTracksForOutput, "Level1TTTracks");
+   std::cout<<"Tracks "<<L1TkTracksForOutput->size()<<std::endl;
+//iEvent.put( L1TkTracksForOutput, "Level1TTTracks");
    //track particle loop
-    tp_pt.resize(0); tp_eta.resize(0); tp_phi.resize(0);
-    tp_vz.resize(0); tp_chgOverPt.resize(0);
-for(unsigned int tp=0; tp<reader.vp2_pt->size(); ++tp){
-	tp_pt.push_back(reader.vp2_pt->at(tp));	
-        tp_eta.push_back(reader.vp2_eta->at(tp));
-        tp_phi.push_back(reader.vp2_phi->at(tp));
-        tp_vz.push_back(reader.vp2_vz->at(tp));
-	tp_chgOverPt.push_back(reader.vp2_charge->at(tp)/reader.vp2_pt->at(tp));
-}
-
 matchtp_pt.resize(0); matchtp_eta.resize(0); matchtp_phi.resize(0);
 matchtp_vz.resize(0); matchtp_chgOverPt.resize(0);
 trk_pt.resize(0); trk_eta.resize(0); trk_phi.resize(0);
@@ -261,24 +352,53 @@ trk_class.resize(0);trk_ghost.resize(0);
 		matchtp_chgOverPt.push_back(reader.vp2_charge->at(ttracks[t].tpId())/reader.vp2_pt->at(ttracks[t].tpId()));
 	}
     }
+*/
 	Amtracks->Fill();
-
 }
-void AMTrackProducer::initOptions(ProgramOption &option){
-    option.bankfile="/fdata/hepx/store/user/rish/AMSIMULATION/CMSSW_6_2_0_SLHC25_patch3/src/SLHCL1TrackTriggerSimulations/AMSimulation/data/Patterns/patternBank_tt27_sf1_nz1_pt3_100M.root";
-    option.verbose=1;
-    option.tower=27;
-    option.superstrip="sf1_nz1";
-    
-    option.maxPatterns=150327;
+
+double AMTrackProducer::genTrackDistanceTransverse(const double &pt, const double &phi0, const double &d0,
+                                                 const int charge, const double &B, const double &phi, const double &R) 
+{
+  //std::cout<<"Transverse input: "<<pt<<", "<<phi0<<", "<<d0<<", "<<charge<<", "<<B<<", "<<phi<<", "<<R<<std::endl;
+    double rho = charge*pt/(B*0.003);
+    double phiGen = phi0 - asin((d0*d0 + 2*d0*rho + R*R)/(2*R*(rho+d0)));
+    double deltaPhi = (phi - phiGen);
+    if (deltaPhi > M_PI) deltaPhi -= M_PI;
+    else if (deltaPhi < -M_PI) deltaPhi += M_PI;
+  //            //std::cout<<"Transverse output: "<<deltaPhi<<std::endl;
+    return deltaPhi;
+  }
+double AMTrackProducer::genTrackDistanceLongitudinal(const double &z0, const double &cotTheta, const double &pt, const double &d0,
+const int charge, const double &B, const double &R, const double &z) {
+  //                                                                   //std::cout<<"Longitudinal input: "<<z0<<", "<<cotTheta<<", "<<pt<<", "<<d0<<", "<<charge<<", "<<B<<", "<<R<<", "<<z<<std::endl;
+   double rho = charge*pt/(B*0.003);
+ double zGen = z0 + charge*rho*cotTheta*acos((pow(rho,2) + pow(d0+rho,2) - pow(R,2))/(2*rho*(rho+d0)));
+  //                                                                         //std::cout<<"Longitudinal output: "<<z-zGen<<std::endl;
+  return (z - zGen);
+  }
+
+int  AMTrackProducer::PatternBankMap(float eta, float phi){
+int pb=0;
+int ib=TrigTowerMap->FindBin(eta,phi);
+if(ib>0)pb=TrigTowerMap->GetBinContent(ib);
+return pb;
+}
+
+void AMTrackProducer::initOptions(ProgramOption &option, int PBIndex){
+//    option.bankfile=TString::Format("/fdata/hepx/store/user/rish/AMSIMULATION/CMSSW_6_2_0_SLHC25_patch3/src/SLHCL1TrackTriggerSimulations/AMSimulation/data/Patterns/patternBank_tt%d_sf1_nz1_pt3_100M.root", PBIndex);
+    option.bankfile=TString::Format("/fdata/hepx/store/user/rish/AMSIMULATION/Forked/CMSSW_6_2_0_SLHC25_patch3/src/patternBank_tt%d_sf1_nz4_pt3_5M.root", PBIndex);
+    option.verbose=2;
+    option.tower=PBIndex;
+    option.superstrip="sf1_nz4";
+ //   option.maxPatterns=150327;
     option.nLayers=6;
     option.minFrequency=1;
-    option.maxStubs=99999;
+     option.maxStubs=99999;
     option.maxMisses=0;
     option.maxRoads=99999;
 
     option.algo="LTF";
-    option.maxChi2=99999;
+   option.maxChi2=99999;
     option.minNdof=1;
     option.maxCombs=99999;
     option.maxTracks=99999;
