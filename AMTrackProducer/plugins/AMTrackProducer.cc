@@ -174,218 +174,34 @@ for ( iterTTTrack = TTRoadHandle->begin();
 	
 	}
 	//do fit for this road
-	 double normChi2 = linearizedTrackFitter_->fit(vars, trackStubs.size());	
-         linearizedTrackFitter_=(std::make_shared<LinearizedTrackFitter>("LinearizedTrackFit/LinearizedTrackFit/python/ConstantsProduction/", true, true)),
-	int ndof = 8;
-
-	 //std::cout<<"chi2 "<<normChi2<<std::endl;
-    }
-}
-
-
-/*
-
-    ProgramOption option;
-
-edm::ESHandle<MagneticField> magneticFieldHandle;
-iSetup.get<IdealMagneticFieldRecord>().get(magneticFieldHandle);
-const MagneticField* theMagneticField = magneticFieldHandle.product();
-double mMagneticFieldStrength = theMagneticField->inTesla(GlobalPoint(0,0,0)).z();
-    TTStubPlusTPReader reader(0);
-    //std::cout<<"Just declare constructor "<<std::endl;
-    if(!pixelDigiTTStubs.isValid())return;
-    reader.init(iEvent);//just to get tracking particles
-    //std::cout<<"After Init of TTStubPlusTPReader "<<std::endl; 
-    NStubs= reader.vb_r->size();
-    NStubs0=0;
-    NStubs1=0;
-    NStubs2=0;
-    NStubs3=0;
-    NStubs4=0;
-    NStubs5=0;
-    NgoodStubs0=0;
-    NgoodStubs1=0;
-    NgoodStubs2=0;
-    NgoodStubs3=0;
-    NgoodStubs4=0;
-    NgoodStubs5=0;
-    for (unsigned int istub=0; istub<reader.vb_r->size(); ++istub) {
-	float r=reader.vb_r->at(istub);
-          // unsigned moduleId = reader.vb_modId   ->at(istub);
-//	    int tpID=reader.vb_tpId->at(istub);
-	
-	if(r>20 && r<30)++NStubs0;
-        if(r>20 && r<30 && reader.vb_tpId->at(istub)>=0)++NgoodStubs0;
-        if(r>30 && r<40)++NStubs1;
-        if(r>30 && r<40 && reader.vb_tpId->at(istub)>=0)++NgoodStubs1;
-        if(r>40 && r<60)++NStubs2;
-        if(r>40 && r<60 && reader.vb_tpId->at(istub)>=0)++NgoodStubs2;
-        if(r>60 && r<70)++NStubs3;
-        if(r>60 && r<70 && reader.vb_tpId->at(istub)>=0)++NgoodStubs3;
-        if(r>70 && r<95)++NStubs4;
-        if(r>70 && r<95 && reader.vb_tpId->at(istub)>=0)++NgoodStubs4;
-        if(r>100)++NStubs5;
-	if(r>100  && reader.vb_tpId->at(istub)>=0)++NgoodStubs5;
- 
-    }
-
-
-    option.datadir = "/fdata/hepx/store/user/rish/AMSIMULATION/Forked/CMSSW_6_2_0_SLHC25_patch3/"; //std::getenv("CMSSW_BASE");
-
-    option.datadir += "/src/SLHCL1TrackTriggerSimulations/AMSimulation/data/";
-
-    tp_pt.resize(0); tp_eta.resize(0); tp_phi.resize(0);
-    tp_vz.resize(0); tp_chgOverPt.resize(0);
-    int PBIndex=-1;
-
-for(unsigned int tp=0; tp<reader.vp2_pt->size(); ++tp){
-	if(abs(reader.vp2_pdgId->at(tp))!=13)continue;
-	PBIndex=PatternBankMap(reader.vp2_eta->at(tp),(reader.vp2_phi->at(tp)));
-	//std::cout<<"eta, phi "<<reader.vp2_eta->at(tp)<<", "<<reader.vp2_phi->at(tp)<<"MY pattern Bank "<<PBIndex<<std::endl;
-	
-	tp_pt.push_back(reader.vp2_pt->at(tp));	
-        tp_eta.push_back(reader.vp2_eta->at(tp));
-        tp_phi.push_back(reader.vp2_phi->at(tp));
-        tp_vz.push_back(reader.vp2_vz->at(tp));
-	tp_chgOverPt.push_back(reader.vp2_charge->at(tp)/reader.vp2_pt->at(tp));
-}
-    if( fabs(tp_eta[0])>1.42)return;
-    float rmax=0;
-  unsigned int inTower=0;
-   TH1F*OtherTowers=new TH1F("OtherTowers", "",48, 1, 49);
-   // std::vector<int>OtherTower;
-    for (unsigned int istub=0; istub<reader.vb_r->size(); ++istub) {
-	float r=reader.vb_r->at(istub);
-            unsigned moduleId = reader.vb_modId   ->at(istub);
-	    int tpID=reader.vb_tpId->at(istub);
-	    if(tpID<0)continue;
-	  
-	  //  for( int t=0; t<48; ++t){
-	    std::map<unsigned, bool> ttrmap = ttmap_->getTriggerTowerReverseMap(PBIndex);
-            if (ttrmap.find(moduleId) != ttrmap.end()){
-			//std::cout<<"Module ID "<<r<<" Tower "<<PBIndex<<std::endl;	
-			if(r>rmax){rmax=r; ++inTower;}
-			//float dz=genTrackDistanceLongitudinal( tp_vz[0], 
-		}
-	    else{
-		for( int t=0; t<48; ++t){
-			if(t==PBIndex)continue;
-			ttrmap = ttmap_->getTriggerTowerReverseMap(t);	
-			if(ttrmap.find(moduleId) != ttrmap.end()){
-				
-				if(r>rmax){rmax=r; OtherTowers->Fill(t);}		
-				std::cout<<"Module ID "<<r<<"Other Tower "<<t<<std::endl;	
-			}
-		}
-	}
-}
-
-    if(OtherTowers->Integral()>inTower){
-	   int binmax = OtherTowers->GetMaximumBin();
-   double x = OtherTowers->GetXaxis()->GetBinLowEdge(binmax);
-	std::cout<<"Other Tower with Hits "<<x<<std::endl;
-	PBIndex=x;
-//	for(unsigned i=0; i<OtherTower.size(); ++i)
-		//if(i>0 && OtherTower[i]===OtherTower[i-1]){
-	//		++frequency;
-	//`	}
-//		std::cout<<" Other Towers "<<OtherTower[i]<<std::endl;
-    }	
-      
-    std::cout<<"In Tower "<<inTower<<" Other Tower "<<OtherTowers->Integral()<<std::endl;
-    std::cout<<"PBIndex "<<PBIndex<<std::endl;
-
-    if(PBIndex<1)return;
-    initOptions(option,PBIndex);
-    
-    matcher_=new PatternMatcher(option);
- 
-    matcher_->loadPatterns(option.bankfile);
-  
-   std::vector<TTRoad> roads=matcher_->makeRoads(iEvent);
-    delete matcher_;
-    delete OtherTowers;
-    //NRoads=roads.size();
-   // std::cout<<"Roads "<<roads.size()<<std::endl; 
- TrackFitter trackFit(option);
- //std::vector<TTTrack2>ttracks;
-   std::vector<TTTrack2>ttracks=trackFit.makeTracks(iEvent, roads);
-    StubsinRoad.resize(0);
-    goodStubsinRoad.resize(0);
-    for (unsigned iroad=0; iroad<roads.size(); ++iroad) {
-        StubsinRoad.push_back(roads[iroad].stubRefs.size());
-   	int good=0; 
-        for(unsigned istub=0; istub<roads[iroad].stubRefs.size(); ++istub){
-	   if(reader.vb_tpId->at(istub)>=0)++good;
-	}
-	goodStubsinRoad.push_back(good);
-}
-    
-//now just take L1 ttracks2 and build the standard collection:
-    for(unsigned int t=0; t<ttracks.size();++t){
+	double normChi2 = linearizedTrackFitter_->fit(vars, trackStubs.size());	
+	const std::vector<double>& pars = linearizedTrackFitter_->estimatedPars();
+	//float cottheta=pars[2];
+	//float theta=std::atan(1.0 /cottheta)
+	//float eta= -std::log(tan(theta()/2.0));
+	float pt=1.0/fabs(pars[0]);
+	float px=pt*cos(fabs(pars[1]));
+	float py=pt*sin(fabs(pars[1]));
+	float pz=pt*pars[2];
+	GlobalVector p3(px,py,pz);
 	TTTrack<Ref_PixelDigi_> aTrack;
-	 std::vector<unsigned>StubsRefIndex=ttracks[t].stubRefs();
-	unsigned sindex = 0;
-	edmNew::DetSetVector< TTStub< Ref_PixelDigi_ > >::const_iterator inputIter;
-	edmNew::DetSet< TTStub< Ref_PixelDigi_ > >::const_iterator stubIter;
-	for ( inputIter = pixelDigiTTStubs->begin(); inputIter != pixelDigiTTStubs->end(); ++inputIter ){
-    		for ( stubIter = inputIter->begin(); stubIter != inputIter->end(); ++stubIter ){
-			std::vector<unsigned>::iterator it=std::find(StubsRefIndex.begin(), StubsRefIndex.end(),sindex);
-			if(it!=StubsRefIndex.end()){
-			edm::Ref< edmNew::DetSetVector< TTStub< Ref_PixelDigi_ > >, TTStub< Ref_PixelDigi_ > > tempStubRef = edmNew::makeRefTo( pixelDigiTTStubs, stubIter);
-			  aTrack.addStubRef(tempStubRef);
-		}
-		++sindex;
-   	   }
-	}
-	GlobalVector p3(GlobalVector::Cylindrical(ttracks[t].pt(), ttracks[t].phi0(),ttracks[t].pt()*sinh(ttracks[t].eta()) ));
 	aTrack.setMomentum(p3,4);
-	aTrack.setRInv(ttracks[t].rinv(),4);
-        aTrack.setChi2(ttracks[t].chi2()/ttracks[t].ndof(),4);
-	GlobalPoint POCA(0, 0,ttracks[t].vz());
-	float consistency4par = StubPtConsistency::getConsistency(aTrack, theStackedGeometry, mMagneticFieldStrength, 4);
+	aTrack.setRInv(0.003 * 3.8 * pars[0],4);
+        aTrack.setChi2(normChi2,4);
+	GlobalPoint POCA(0, 0,pars[3]);
 	aTrack.setPOCA(POCA,4);
-	aTrack.setStubPtConsistency(consistency4par,4);
    	//if(ttracks[t].chi2Red()<5 && aTrack.getStubRefs().size()>=4 && !ttracks[t].isGhost())
 	L1TkTracksForOutput->push_back( aTrack);
    }
    std::cout<<"Tracks "<<L1TkTracksForOutput->size()<<std::endl;
 //iEvent.put( L1TkTracksForOutput, "Level1TTTracks");
-   //track particle loop
-matchtp_pt.resize(0); matchtp_eta.resize(0); matchtp_phi.resize(0);
-matchtp_vz.resize(0); matchtp_chgOverPt.resize(0);
-trk_pt.resize(0); trk_eta.resize(0); trk_phi.resize(0);
-trk_vz.resize(0); trk_chgOverPt.resize(0);trk_chi2.resize(0);
-trk_cotheta.resize(0);trk_rinv.resize(0);
-trk_class.resize(0);trk_ghost.resize(0);
+	 //std::cout<<"chi2 "<<normChi2<<std::endl;
+iEvent.put( L1TkTracksForOutput, "Level1TTTracks");
 
-    for(unsigned int t=0; t<ttracks.size(); ++t){//track loop
-	trk_pt.push_back(ttracks[t].pt());	
-	trk_eta.push_back(ttracks[t].eta());
-	trk_phi.push_back(ttracks[t].phi());
-	trk_vz.push_back(ttracks[t].vz());
-	trk_chi2.push_back(ttracks[t].chi2Red());
-	trk_rinv.push_back(ttracks[t].rinv());
-	trk_cotheta.push_back(ttracks[t].cottheta());
-	trk_class.push_back(ttracks[t].synTpId());
-
-	if(ttracks[t].isGhost())trk_ghost.push_back(1);
-	else trk_ghost.push_back(0);
-
-//trk_chgOverPt.push_back(ttracks[t].z0());
-
-	if(ttracks[t].tpId()>=0){
-		matchtp_pt.push_back(reader.vp2_pt->at(ttracks[t].tpId()));
-		matchtp_eta.push_back(reader.vp2_eta->at(ttracks[t].tpId()));
-                matchtp_phi.push_back(reader.vp2_phi->at(ttracks[t].tpId()));
-                matchtp_vz.push_back(reader.vp2_vz->at(ttracks[t].tpId()));
-		matchtp_chgOverPt.push_back(reader.vp2_charge->at(ttracks[t].tpId())/reader.vp2_pt->at(ttracks[t].tpId()));
-	}
     }
-*/	
-
-	Amtracks->Fill();
 }
+
+
 
 double AMTrackProducer::genTrackDistanceTransverse(const double &pt, const double &phi0, const double &d0,
                                                  const int charge, const double &B, const double &phi, const double &R) 
