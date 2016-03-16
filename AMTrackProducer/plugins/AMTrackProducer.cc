@@ -90,6 +90,7 @@ void AMTrackProducer::beginJob(){
 
     linearizedTrackFitter_=(std::make_shared<LinearizedTrackFitter>("/fdata/hepx/store/user/rish/AMSIMULATION/Forked/CMSSW_6_2_0_SLHC25_patch3/src/LinearizedTrackFit/LinearizedTrackFit/python/ConstantsProduction/", true, true));
     Amtracks = fs->make<TTree>("Amtracks", "");
+/*
     Amtracks->Branch("tp_pt", &tp_pt);
     Amtracks->Branch("tp_eta", &tp_eta);
     Amtracks->Branch("tp_phi", &tp_phi);
@@ -100,6 +101,7 @@ void AMTrackProducer::beginJob(){
     Amtracks->Branch("matchtp_phi", &matchtp_phi);
     Amtracks->Branch("matchtp_vz", &matchtp_vz);
     Amtracks->Branch("matchtp_chgOverPt", &matchtp_chgOverPt);
+*/
     Amtracks->Branch("trk_pt", &trk_pt);
     Amtracks->Branch("trk_eta", &trk_eta);
     Amtracks->Branch("trk_phi", &trk_phi);
@@ -107,6 +109,7 @@ void AMTrackProducer::beginJob(){
     Amtracks->Branch("trk_chi2", &trk_chi2);
     Amtracks->Branch("trk_rinv", &trk_rinv);
     Amtracks->Branch("trk_cotheta", &trk_cotheta);
+  /*
     Amtracks->Branch("trk_class", &trk_class);
     Amtracks->Branch("trk_ghost", &trk_ghost);
     Amtracks->Branch("NRoads", &NRoads, "NRoads/I");
@@ -125,7 +128,7 @@ void AMTrackProducer::beginJob(){
     Amtracks->Branch("NgoodStubs5", &NgoodStubs5, "NgoodStubs5/I");
     Amtracks->Branch("StubsinRoad", &StubsinRoad);
     Amtracks->Branch("goodStubsinRoad", &goodStubsinRoad);
-
+*/
 
 }
 void AMTrackProducer::endJob(){
@@ -153,6 +156,9 @@ void AMTrackProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
   edm::ESHandle<StackedTrackerGeometry> stackedGeometryHandle;
     iSetup.get<StackedTrackerGeometryRecord>().get(stackedGeometryHandle);
  const StackedTrackerGeometry *theStackedGeometry = stackedGeometryHandle.product();
+	trk_pt.resize(0);
+        trk_phi.resize(0);
+        trk_eta.resize(0);
 
 if (TTRoadHandle->size() > 0 ){
 //std::cout<<"ROADS FILLED IN MODULE "<<std::endl;
@@ -178,6 +184,10 @@ for ( iterTTTrack = TTRoadHandle->begin();
 	if (comb>6)comb=6;
 	double normChi2 = linearizedTrackFitter_->fit(vars, comb);	
 	const std::vector<double>& pars = linearizedTrackFitter_->estimatedPars();
+	std::cout<<pars[0]<<" "<<pars[1]<<" "<<pars[2]<<std::endl;
+	trk_pt.push_back(pars[0]);
+        trk_phi.push_back(pars[1]);
+        trk_eta.push_back(pars[2]);
 	//float cottheta=pars[2];
 	//float theta=std::atan(1.0 /cottheta)
 	//float eta= -std::log(tan(theta()/2.0));
@@ -199,7 +209,7 @@ for ( iterTTTrack = TTRoadHandle->begin();
 //iEvent.put( L1TkTracksForOutput, "Level1TTTracks");
 	 //std::cout<<"chi2 "<<normChi2<<std::endl;
 iEvent.put( L1TkTracksForOutput, "Level1TTTracks");
-
+Amtracks->Fill();
     }
 }
 
