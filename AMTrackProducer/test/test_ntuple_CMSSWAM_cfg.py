@@ -52,52 +52,25 @@ process.load('Geometry.TrackerGeometryBuilder.StackedTrackerGeometry_cfi')
 process.load('SimTracker.TrackTriggerAssociation.TrackTriggerAssociator_cff')
 process.load("AMCMSSWInterface.AMTrackProducer.AMTrackingSequence_cff")
 #process.load("SLHCUpgradeSimulations.L1TrackTrigger.L1TkMuonSequence_cfi")
+'''
 if mode=="AM":
 	process.load("AMCMSSWInterface.AMTrackProducer.L1TkMuonSequence_cfi")
 else:
 	process.load("SLHCUpgradeSimulations.L1TrackTrigger.L1TkMuonSequence_cfi")
+'''
 process.p = cms.Path(process.AMTracks)
 
 #import the producers
-process.TTTrackAssociatorForAM=process.TTTrackAssociatorFromPixelDigis.clone()
+#process.TTTrackAssociatorForAM=process.TTTrackAssociatorFromPixelDigis.clone()
 #if mode == "AM":
 #	process.TTTrackAssociatorForAM.TTTracks=cms.VInputTag( cms.InputTag("AMTrackProducer", "Level1TTTracks"))
 #else:
 #	process.TTTrackAssociatorForAM.TTTracks=cms.VInputTag( cms.InputTag("TTTracksFromPixelDigis", "Level1TTTracks"))
-process.TTAssociator_step = cms.Path(process.TTTrackAssociatorForAM)
-process.pMuons = cms.Path( process.L1TkMuons )
-
-process.load('Configuration/StandardSequences/L1HwVal_cff')
-process.load('Configuration.StandardSequences.RawToDigi_cff')
-process.load("SLHCUpgradeSimulations.L1CaloTrigger.SLHCCaloTrigger_forTTI_cff")
-from SimCalorimetry.HcalTrigPrimProducers.hcaltpdigi_cff import HcalTPGCoderULUT
-HcalTPGCoderULUT.LUTGenerationMode = cms.bool(True)
-process.valRctDigis.hcalDigis             = cms.VInputTag(cms.InputTag('valHcalTriggerPrimitiveDigis'))
-process.L1CaloTowerProducer.HCALDigis =  cms.InputTag("valHcalTriggerPrimitiveDigis")
-
-process.slhccalo = cms.Path( process.RawToDigi + process.valHcalTriggerPrimitiveDigis+process.SLHCCaloTrigger)
-
-process.es_prefer_dt = cms.ESPrefer("DTConfigTrivialProducer","L1DTConfig")
-process.load('Configuration.StandardSequences.L1Reco_cff')
-process.L1Reco = cms.Path( process.l1extraParticles )
-
-
-process.ana = cms.EDAnalyzer( 'TkTriggerParticleAnalzer' ,
- L1TkMuonsInputTag = cms.InputTag("L1TkMuonsMerge",""),
- GenPartInputTag=cms.InputTag("genParticles"),
- TrackPartTag=cms.InputTag("mix","MergedTrackTruth"),
- TTTracksInputTag=cms.InputTag("AMTrackProducer", "Level1TTTracks"),
- inputTagMC = cms.InputTag('TTTrackAssociatorForAM', 'Level1TTTracks'),
- L1TkElectronsInputTag = cms.InputTag("L1TkElectrons","EG"),
- L1TkPhotonsInputTag= cms.InputTag("L1TkPhotons", "EG"),
- ParticleType=cms.int32(13),
-)
-
-process.pAna = cms.Path( process.ana )
 
 
 
 
+'''
 process.load("SLHCUpgradeSimulations.L1TrackTrigger.L1TkEmParticleProducer_cfi")
 process.load("SLHCUpgradeSimulations.L1TrackTrigger.L1TkElectronTrackProducer_cfi")
 if mode == "AM":
@@ -122,7 +95,9 @@ process.L1TkElectronsLoose.TrackEGammaDeltaR = cms.vdouble(0.12, 0.0, 0.0)
 process.L1TkElectronsLoose.TrackMinPt = cms.double( 3.0 )
 process.pElectronsLoose = cms.Path( process.L1TkElectronsLoose)
 AMTrackInputTag = cms.InputTag("AMTrackProducer", "Level1TTTracks")
-if mode != "AM":AMTrackInputTag = cms.InputTag("TTTracksFromPixelDigis", "Level1TTTracks")
+'''
+#if mode != "AM":
+AMTrackInputTag = cms.InputTag("TTTracksFromPixelDigis", "Level1TTTracks")
 	
 
 #from SLHCUpgradeSimulations.L1TrackTrigger.l1TkMuonsExt_cfi import l1TkMuonsExt
