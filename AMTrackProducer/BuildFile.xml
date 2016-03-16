@@ -17,6 +17,7 @@
 <use   name="DataFormats/WrappedStdDictionaries"/>
 <use   name="TrackingTools/PatternTools"/>
 <use   name="SLHCUpgradeSimulations/L1TrackTrigger"/>
+<use   name="LinearizedTrackFit/LinearizedTrackFit"/>
 <!--use   name="clhep"/-->
 <!--use   name="boost"/-->
 <!--use   name="root"/-->

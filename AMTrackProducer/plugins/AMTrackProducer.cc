@@ -1,6 +1,6 @@
 #ifndef NTupleTools_AMTrackProducer_h_
 
-
+#include <memory>
 #include "FWCore/Framework/interface/EDProducer.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
@@ -28,6 +28,9 @@
 #include "SLHCUpgradeSimulations/L1TrackTrigger/interface/StubPtConsistency.h"
 #include "SLHCL1TrackTriggerSimulations/NTupleTools/interface/MapTTStubs.h" 
 #include "SLHCL1TrackTriggerSimulations/AMSimulation/interface/TriggerTowerMap.h"
+#include "LinearizedTrackFit/LinearizedTrackFit/interface/LinearizedTrackFitter.h"
+#include "SLHCL1TrackTriggerSimulations/AMSimulation/interface/TrackFitterAlgoLTF.h"
+#include "SLHCL1TrackTriggerSimulations/AMSimulation/interface/CombinationFactory.h"
 //#include "SimTracker/TrackTriggerAssociation/interface/TTStubAssociationMap.h"
 //#include "SimTracker/TrackTriggerAssociation/interface/TTClusterAssociationMap.h"
 #include<TFile.h>
@@ -74,6 +77,9 @@ edm::InputTag StubsTag_;
 TH2F*TrigTowerMap;
 TriggerTowerMap * ttmap_;
 TFile*fin;
+TrackFitterAlgoBase * fitter_;
+CombinationFactory combinationFactory_;
+//std::shared_ptr<LinearizedTrackFitter> linearizedTrackFitter_;
 };
 void AMTrackProducer::beginJob(){
    ttmap_ = new TriggerTowerMap();
@@ -82,7 +88,7 @@ void AMTrackProducer::beginJob(){
    TrigTowerMap=(TH2F*)fin->Get("h2TrigMap");
    edm::Service<TFileService> fs;
 
-
+    //linearizedTrackFitter_(std::make_shared<LinearizedTrackFitter>("/fdata/hepx/store/user/rish/AMSIMULATION/Forked/CMSSW_6_2_0_SLHC25_patch3/src/LinearizedTrackFit/LinearizedTrackFit/python/ConstantsProduction/", true, true));
     Amtracks = fs->make<TTree>("Amtracks", "");
     Amtracks->Branch("tp_pt", &tp_pt);
     Amtracks->Branch("tp_eta", &tp_eta);
@@ -141,8 +147,10 @@ void AMTrackProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
         iEvent.getByLabel(StubsTag_, pixelDigiTTStubs);
 
     std::auto_ptr<std::vector< TTTrack<Ref_PixelDigi_> > > TTTrackVector(new std::vector<TTTrack<Ref_PixelDigi_> >());
-    ProgramOption option;
 /*
+
+    ProgramOption option;
+
   edm::ESHandle<StackedTrackerGeometry> stackedGeometryHandle;
     iSetup.get<StackedTrackerGeometryRecord>().get(stackedGeometryHandle);
  const StackedTrackerGeometry *theStackedGeometry = stackedGeometryHandle.product();
@@ -150,7 +158,6 @@ edm::ESHandle<MagneticField> magneticFieldHandle;
 iSetup.get<IdealMagneticFieldRecord>().get(magneticFieldHandle);
 const MagneticField* theMagneticField = magneticFieldHandle.product();
 double mMagneticFieldStrength = theMagneticField->inTesla(GlobalPoint(0,0,0)).z();
-*/
     TTStubPlusTPReader reader(0);
     //std::cout<<"Just declare constructor "<<std::endl;
     if(!pixelDigiTTStubs.isValid())return;
@@ -173,15 +180,6 @@ double mMagneticFieldStrength = theMagneticField->inTesla(GlobalPoint(0,0,0)).z(
 	float r=reader.vb_r->at(istub);
           // unsigned moduleId = reader.vb_modId   ->at(istub);
 //	    int tpID=reader.vb_tpId->at(istub);
-	
-/*
-	    for( int t=0; t<48; ++t){
-	    std::map<unsigned, bool> ttrmap = ttmap_->getTriggerTowerReverseMap(t);
-            if (ttrmap.find(moduleId) != ttrmap.end()){
-			if(tpID>-1)std::cout<<"Module ID "<<tpID<<" Tower "<<t<<std::endl;	
-			break;
-		}
-*/
 	
 	if(r>20 && r<30)++NStubs0;
         if(r>20 && r<30 && reader.vb_tpId->at(istub)>=0)++NgoodStubs0;
@@ -271,12 +269,11 @@ for(unsigned int tp=0; tp<reader.vp2_pt->size(); ++tp){
  
     matcher_->loadPatterns(option.bankfile);
   
-   // std::vector<TTRoad> roads=matcher_->makeRoads(iEvent);
+   std::vector<TTRoad> roads=matcher_->makeRoads(iEvent);
     delete matcher_;
     delete OtherTowers;
     //NRoads=roads.size();
    // std::cout<<"Roads "<<roads.size()<<std::endl; 
- /*   
  TrackFitter trackFit(option);
  //std::vector<TTTrack2>ttracks;
    std::vector<TTTrack2>ttracks=trackFit.makeTracks(iEvent, roads);
@@ -352,7 +349,8 @@ trk_class.resize(0);trk_ghost.resize(0);
 		matchtp_chgOverPt.push_back(reader.vp2_charge->at(ttracks[t].tpId())/reader.vp2_pt->at(ttracks[t].tpId()));
 	}
     }
-*/
+*/	
+
 	Amtracks->Fill();
 }
 

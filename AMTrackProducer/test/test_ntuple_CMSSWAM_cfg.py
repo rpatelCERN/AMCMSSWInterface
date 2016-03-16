@@ -8,7 +8,8 @@ from AMCMSSWInterface.AMTrackProducer.CommandLineParams import CommandLineParams
 ## MessageLogger
 parameters = CommandLineParams()
 inputFiles = parameters.value("inputFiles",
-'file:/fdata/hepx/store/user/rish/Muons/TTIMuons11.root'
+'file:/fdata/hepx/store/user/rish/CMSSW_6_2_0_SLHC25_patch3/src/Muons/SingleMuonNoPU_tt27_16.root'
+#'file:/fdata/hepx/store/user/rish/Muons/TTIMuons11.root'
 #'file:/fdata/hepx/store/user/rish/CMSSW_6_2_0_SLHC25_patch3/src/SingleMuonPU_tt27_%s.root'
 )
 outputFile=parameters.value("outputFile","test_ntuple.root")
@@ -59,10 +60,10 @@ process.p = cms.Path(process.AMTracks)
 
 #import the producers
 process.TTTrackAssociatorForAM=process.TTTrackAssociatorFromPixelDigis.clone()
-if mode == "AM":
-	process.TTTrackAssociatorForAM.TTTracks=cms.VInputTag( cms.InputTag("AMTrackProducer", "Level1TTTracks"))
-else:
-	process.TTTrackAssociatorForAM.TTTracks=cms.VInputTag( cms.InputTag("TTTracksFromPixelDigis", "Level1TTTracks"))
+#if mode == "AM":
+#	process.TTTrackAssociatorForAM.TTTracks=cms.VInputTag( cms.InputTag("AMTrackProducer", "Level1TTTracks"))
+#else:
+#	process.TTTrackAssociatorForAM.TTTracks=cms.VInputTag( cms.InputTag("TTTracksFromPixelDigis", "Level1TTTracks"))
 process.TTAssociator_step = cms.Path(process.TTTrackAssociatorForAM)
 process.pMuons = cms.Path( process.L1TkMuons )
 
