@@ -174,7 +174,9 @@ for ( iterTTTrack = TTRoadHandle->begin();
 	
 	}
 	//do fit for this road
-	double normChi2 = linearizedTrackFitter_->fit(vars, trackStubs.size());	
+	unsigned comb=trackStubs.size();
+	if (comb>6)comb=6;
+	double normChi2 = linearizedTrackFitter_->fit(vars, comb);	
 	const std::vector<double>& pars = linearizedTrackFitter_->estimatedPars();
 	//float cottheta=pars[2];
 	//float theta=std::atan(1.0 /cottheta)
