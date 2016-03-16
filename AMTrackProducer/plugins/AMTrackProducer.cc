@@ -10,6 +10,7 @@
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
 
 #include "FWCore/Framework/interface/MakerMacros.h"
+#include "DataFormats/GeometryCommonDetAlgo/interface/MeasurementPoint.h"
 #include "SLHCL1TrackTriggerSimulations/AMSimulation/interface/PatternMatcher.h"
 #include "SLHCL1TrackTriggerSimulations/AMSimulation/interface/TrackFitter.h"
 #include "DataFormats/L1TrackTrigger/interface/TTCluster.h"
@@ -78,9 +79,7 @@ edm::InputTag StubsTag_;
 TH2F*TrigTowerMap;
 TriggerTowerMap * ttmap_;
 TFile*fin;
-TrackFitterAlgoBase * fitter_;
-CombinationFactory combinationFactory_;
-//std::shared_ptr<LinearizedTrackFitter> linearizedTrackFitter_;
+std::shared_ptr<LinearizedTrackFitter> linearizedTrackFitter_;//(std::make_shared<LinearizedTrackFitter>("/fdata/hepx/store/user/rish/AMSIMULATION/Forked/CMSSW_6_2_0_SLHC25_patch3/src/LinearizedTrackFit/LinearizedTrackFit/python/ConstantsProduction/", true, true));
 };
 void AMTrackProducer::beginJob(){
    ttmap_ = new TriggerTowerMap();
@@ -89,7 +88,7 @@ void AMTrackProducer::beginJob(){
    TrigTowerMap=(TH2F*)fin->Get("h2TrigMap");
    edm::Service<TFileService> fs;
 
-    //linearizedTrackFitter_(std::make_shared<LinearizedTrackFitter>("/fdata/hepx/store/user/rish/AMSIMULATION/Forked/CMSSW_6_2_0_SLHC25_patch3/src/LinearizedTrackFit/LinearizedTrackFit/python/ConstantsProduction/", true, true));
+    linearizedTrackFitter_=(std::make_shared<LinearizedTrackFitter>("/fdata/hepx/store/user/rish/AMSIMULATION/Forked/CMSSW_6_2_0_SLHC25_patch3/src/LinearizedTrackFit/LinearizedTrackFit/python/ConstantsProduction/", true, true));
     Amtracks = fs->make<TTree>("Amtracks", "");
     Amtracks->Branch("tp_pt", &tp_pt);
     Amtracks->Branch("tp_eta", &tp_eta);
@@ -137,7 +136,6 @@ AMTrackProducer::AMTrackProducer(const edm::ParameterSet& iConfig) {
      StubsTag_ =(iConfig.getParameter<edm::InputTag>("inputTagStub"));
      RoadsTag_=(iConfig.getParameter<edm::InputTag>("RoadsInputTag"));
      produces< std::vector< TTTrack< Ref_PixelDigi_ > > >( "Level1TTTracks" ).setBranchAlias("Level1TTTracks");
-
 }
 
 void AMTrackProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
@@ -152,6 +150,10 @@ void AMTrackProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
 
  edm::Handle< std::vector< TTTrack< Ref_PixelDigi_ > > > TTRoadHandle;
    iEvent.getByLabel( RoadsTag_, TTRoadHandle );
+  edm::ESHandle<StackedTrackerGeometry> stackedGeometryHandle;
+    iSetup.get<StackedTrackerGeometryRecord>().get(stackedGeometryHandle);
+ const StackedTrackerGeometry *theStackedGeometry = stackedGeometryHandle.product();
+
 if (TTRoadHandle->size() > 0 ){
 //std::cout<<"ROADS FILLED IN MODULE "<<std::endl;
  unsigned int tkCnt = 0;
@@ -162,19 +164,29 @@ for ( iterTTTrack = TTRoadHandle->begin();
     {
       edm::Ptr< TTTrack< Ref_PixelDigi_ > > tempTrackPtr( TTRoadHandle, tkCnt++ );
       std::vector< edm::Ref< edmNew::DetSetVector< TTStub< Ref_PixelDigi_ > >, TTStub< Ref_PixelDigi_ > > > trackStubs = tempTrackPtr->getStubRefs();
-      std::cout<<"ROADS FILLED IN MODULE " << trackStubs.size() << std::endl;
-      //
-      //
-      //            j = 0;
+       std::vector<double> vars;
+       for(unsigned int i=0;i<trackStubs.size();i++){
+		edm::Ref< edmNew::DetSetVector< TTStub< Ref_PixelDigi_ > >, TTStub< Ref_PixelDigi_ > > tempStubRef = trackStubs.at(i);
+		GlobalPoint posStub = theStackedGeometry->findGlobalPosition( &(*tempStubRef) );
+		vars.push_back(posStub.phi());
+		vars.push_back(posStub.perp());
+		vars.push_back(posStub.z());
+	
+	}
+	//do fit for this road
+	 double normChi2 = linearizedTrackFitter_->fit(vars, trackStubs.size());	
+         linearizedTrackFitter_=(std::make_shared<LinearizedTrackFitter>("LinearizedTrackFit/LinearizedTrackFit/python/ConstantsProduction/", true, true)),
+	int ndof = 8;
+
+	 //std::cout<<"chi2 "<<normChi2<<std::endl;
     }
 }
+
+
 /*
 
     ProgramOption option;
 
-  edm::ESHandle<StackedTrackerGeometry> stackedGeometryHandle;
-    iSetup.get<StackedTrackerGeometryRecord>().get(stackedGeometryHandle);
- const StackedTrackerGeometry *theStackedGeometry = stackedGeometryHandle.product();
 edm::ESHandle<MagneticField> magneticFieldHandle;
 iSetup.get<IdealMagneticFieldRecord>().get(magneticFieldHandle);
 const MagneticField* theMagneticField = magneticFieldHandle.product();
