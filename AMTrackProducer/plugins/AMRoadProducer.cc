@@ -298,6 +298,8 @@ for(unsigned int tp=0; tp<reader.vp2_pt->size(); ++tp){
            }
         }
      }
+			 L1TkRoadsForOutput->push_back( aTrack);
+
    }   
       //std::vector<unsigned>StubsRefIndex=ttracks[t].stubRefs();
 /*

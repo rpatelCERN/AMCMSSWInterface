@@ -133,10 +133,10 @@ if mode != "AM":AMTrackInputTag = cms.InputTag("TTTracksFromPixelDigis", "Level1
 		  #ETAMIN = cms.double(1.1),
 #		  )
 
-#process.schedule = cms.Schedule(process.p)
+process.schedule = cms.Schedule(process.p)
 #process.l1TkMuonsExtNoZCor = l1TkMuonsExt.clone( correctGMTPropForTkZ = cms.bool(False) )
 #process.l1TkMuonsExtCSCNoZCor = l1TkMuonsExtCSC.clone( correctGMTPropForTkZ = cms.bool(False) )
 #l1TkMuonsExtSequence = cms.Sequence (l1TkMuonsExt * l1TkMuonsExtCSC
 #                                     * l1TkMuonsExtNoZCor * l1TkMuonsExtCSCNoZCor)
 
-process.schedule = cms.Schedule(process.p, process.TTAssociator_step,process.slhccalo,process.L1Reco,process.pMuons,process.pL1TkPhotons,process.pElectrons,process.pL1TkIsoElectrons,process.pElectronsLoose,process.pAna)
+#process.schedule = cms.Schedule(process.p, process.TTAssociator_step,process.slhccalo,process.L1Reco,process.pMuons,process.pL1TkPhotons,process.pElectrons,process.pL1TkIsoElectrons,process.pElectronsLoose,process.pAna)

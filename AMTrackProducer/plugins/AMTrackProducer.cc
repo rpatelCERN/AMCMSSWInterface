@@ -73,6 +73,7 @@ int NgoodStubs0, NgoodStubs1, NgoodStubs2, NgoodStubs3, NgoodStubs4, NgoodStubs5
 std::vector<int> StubsinRoad;
 std::vector<int> goodStubsinRoad;
 TTree*Amtracks;
+edm::InputTag RoadsTag_;
 edm::InputTag StubsTag_;
 TH2F*TrigTowerMap;
 TriggerTowerMap * ttmap_;
@@ -134,6 +135,7 @@ delete fin;
 }
 AMTrackProducer::AMTrackProducer(const edm::ParameterSet& iConfig) {
      StubsTag_ =(iConfig.getParameter<edm::InputTag>("inputTagStub"));
+     RoadsTag_=(iConfig.getParameter<edm::InputTag>("RoadsInputTag"));
      produces< std::vector< TTTrack< Ref_PixelDigi_ > > >( "Level1TTTracks" ).setBranchAlias("Level1TTTracks");
 
 }
@@ -147,6 +149,25 @@ void AMTrackProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
         iEvent.getByLabel(StubsTag_, pixelDigiTTStubs);
 
     std::auto_ptr<std::vector< TTTrack<Ref_PixelDigi_> > > TTTrackVector(new std::vector<TTTrack<Ref_PixelDigi_> >());
+
+ edm::Handle< std::vector< TTTrack< Ref_PixelDigi_ > > > TTRoadHandle;
+   iEvent.getByLabel( RoadsTag_, TTRoadHandle );
+if (TTRoadHandle->size() > 0 ){
+//std::cout<<"ROADS FILLED IN MODULE "<<std::endl;
+ unsigned int tkCnt = 0;
+ std::vector< TTTrack< Ref_PixelDigi_ > >::const_iterator iterTTTrack;
+for ( iterTTTrack = TTRoadHandle->begin();
+	  iterTTTrack != TTRoadHandle->end();
+	  ++iterTTTrack )
+    {
+      edm::Ptr< TTTrack< Ref_PixelDigi_ > > tempTrackPtr( TTRoadHandle, tkCnt++ );
+      std::vector< edm::Ref< edmNew::DetSetVector< TTStub< Ref_PixelDigi_ > >, TTStub< Ref_PixelDigi_ > > > trackStubs = tempTrackPtr->getStubRefs();
+      std::cout<<"ROADS FILLED IN MODULE " << trackStubs.size() << std::endl;
+      //
+      //
+      //            j = 0;
+    }
+}
 /*
 
     ProgramOption option;
