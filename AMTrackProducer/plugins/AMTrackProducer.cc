@@ -46,8 +46,6 @@ private:
 
 void AMTrackProducer::beginJob()
 {
-
-  //linearizedTrackFitter_ = (std::make_shared<LinearizedTrackFitter>("/fdata/hepx/store/user/rish/AMSIMULATION/Forked/CMSSW_6_2_0_SLHC25_patch3/src/LinearizedTrackFit/LinearizedTrackFit/python/ConstantsProduction/",true, true));
 }
 
 
@@ -59,12 +57,11 @@ AMTrackProducer::AMTrackProducer(const edm::ParameterSet& iConfig)
   StubsTag_ =(iConfig.getParameter<edm::InputTag>("inputTagStub"));
   RoadsTag_=(iConfig.getParameter<edm::InputTag>("RoadsInputTag"));
   produces< std::vector< TTTrack< Ref_PixelDigi_ > > >( "Level1TTTracks" ).setBranchAlias("Level1TTTracks");
-  constantsDir_= iConfig.getParameter<std::string>("ConstantsDir");
-//linearizedTrackFitter_ = (std::make_shared<LinearizedTrackFitter>("/fdata/hepx/store/user/rish/AMSIMULATION/Forked/CMSSW_6_2_0_SLHC25_patch3/src/LinearizedTrackFit/LinearizedTrackFit/python/ConstantsProduction/",true, true));
-  linearizedTrackFitter_ = (std::make_shared<LinearizedTrackFitter>(constantsDir_.c_str(),								    true, true));
-
-  //edm::FileInPath fp = iConfig.getParameter<edm::FileInPath>("ConstantsDir");
-  //constantsDir_ = fp.fullPath();
+  edm::FileInPath fp = iConfig.getParameter<edm::FileInPath>("ConstantsDir");
+  constantsDir_ = fp.fullPath();
+  // Remove the file part to get the constants dir
+  constantsDir_ = constantsDir_.substr(0, constantsDir_.rfind("PreEstimate_Transverse/matrixVD_2016.txt"));
+  linearizedTrackFitter_ = (std::make_shared<LinearizedTrackFitter>(constantsDir_.c_str(), true, true));
 }
 
 
