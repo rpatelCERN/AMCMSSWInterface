@@ -59,8 +59,9 @@ AMTrackProducer::AMTrackProducer(const edm::ParameterSet& iConfig)
   StubsTag_ =(iConfig.getParameter<edm::InputTag>("inputTagStub"));
   RoadsTag_=(iConfig.getParameter<edm::InputTag>("RoadsInputTag"));
   produces< std::vector< TTTrack< Ref_PixelDigi_ > > >( "Level1TTTracks" ).setBranchAlias("Level1TTTracks");
-  edm::FileInPath fp = iConfig.getParameter<edm::FileInPath>("ConstantsDir");
-  constantsDir_ = fp.fullPath();
+  constantsDir_= iConfig.getParameter<std::string>("ConstantsDir");
+  //edm::FileInPath fp = iConfig.getParameter<edm::FileInPath>("ConstantsDir");
+  //constantsDir_ = fp.fullPath();
 }
 
 
