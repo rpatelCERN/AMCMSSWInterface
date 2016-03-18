@@ -16,10 +16,12 @@
 #include "DataFormats/L1TrackTrigger/interface/TTTrack.h"
 #include "DataFormats/L1TrackTrigger/interface/TTTypes.h"
 
+#include "Geometry/CommonDetUnit/interface/GeomDetUnit.h"
 #include "Geometry/Records/interface/StackedTrackerGeometryRecord.h"
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
 #include "Geometry/TrackerGeometryBuilder/interface/StackedTrackerGeometry.h"
+
 #include "MagneticField/Engine/interface/MagneticField.h"
 #include "MagneticField/Records/interface/IdealMagneticFieldRecord.h"
 
@@ -60,8 +62,8 @@ AMTrackProducer::AMTrackProducer(const edm::ParameterSet& iConfig)
   RoadsTag_=(iConfig.getParameter<edm::InputTag>("RoadsInputTag"));
   produces< std::vector< TTTrack< Ref_PixelDigi_ > > >( "Level1TTTracks" ).setBranchAlias("Level1TTTracks");
   constantsDir_= iConfig.getParameter<std::string>("ConstantsDir");
-//linearizedTrackFitter_ = (std::make_shared<LinearizedTrackFitter>("/fdata/hepx/store/user/rish/AMSIMULATION/Forked/CMSSW_6_2_0_SLHC25_patch3/src/LinearizedTrackFit/LinearizedTrackFit/python/ConstantsProduction/",true, true));
-  linearizedTrackFitter_ = (std::make_shared<LinearizedTrackFitter>(constantsDir_.c_str(),								    true, true));
+linearizedTrackFitter_ = (std::make_shared<LinearizedTrackFitter>("/fdata/hepx/store/user/rish/AMSIMULATION/Forked/CMSSW_6_2_0_SLHC25_patch3/src/LinearizedTrackFit/LinearizedTrackFit/python/ConstantsProduction/",true, true));
+//  linearizedTrackFitter_ = (std::make_shared<LinearizedTrackFitter>(constantsDir_.c_str(),								    true, true));
 
   //edm::FileInPath fp = iConfig.getParameter<edm::FileInPath>("ConstantsDir");
   //constantsDir_ = fp.fullPath();
@@ -89,17 +91,29 @@ void AMTrackProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
       edm::Ptr< TTTrack< Ref_PixelDigi_ > > tempTrackPtr( TTRoadHandle, tkCnt++ );
       std::vector< edm::Ref< edmNew::DetSetVector< TTStub< Ref_PixelDigi_ > >, TTStub< Ref_PixelDigi_ > > > trackStubs = tempTrackPtr->getStubRefs();
       std::vector<double> vars;
+      std::vector<unsigned>layers; 
       for(unsigned int i=0;i<trackStubs.size();i++) {
 	edm::Ref< edmNew::DetSetVector< TTStub< Ref_PixelDigi_ > >, TTStub< Ref_PixelDigi_ > > tempStubRef = trackStubs.at(i);
+        StackedTrackerDetId detIdStub( tempStubRef->getDetId() );
+	int layer=0;
+	if ( detIdStub.isBarrel() ) layer = detIdStub.iLayer()+4;
+	else  continue; //layer = 10+detIdStub.iZ()+abs((int)(detIdStub.iSide())-2)*7;
+	layers.push_back(layer);
 	GlobalPoint posStub = theStackedGeometry->findGlobalPosition( &(*tempStubRef) );
 	vars.push_back(posStub.phi());
 	vars.push_back(posStub.perp());
 	vars.push_back(posStub.z());
       }
-      // Fit for this road
-      unsigned comb=trackStubs.size();
-      if (comb>6) comb = 6;
-      double normChi2 = linearizedTrackFitter_->fit(vars, comb);	
+      //which layers are hit 
+      if(layers.size()<5)continue;
+      int bits=0;
+      if(layers[0]!=5)bits=1;
+      if(layers[0]==5 && layers[1]==7)bits=2;
+      if(layers[1]==6 && layers[2]==8)bits=3;
+      if(layers[3]==9 && layers[2]==7)bits=4;
+      if(layers[3]==8 && layers[4]==10)bits=5;
+      if(layers[4]!=10 && layers.size()<6)bits=6;
+      double normChi2 = linearizedTrackFitter_->fit(vars, bits);	
       const std::vector<double>& pars = linearizedTrackFitter_->estimatedPars();
       float pt=1.0/fabs(pars[0]);
       float px=pt*cos(fabs(pars[1]));
@@ -112,10 +126,9 @@ void AMTrackProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
       aTrack.setChi2(normChi2, 4);
       GlobalPoint POCA(0, 0, pars[3]);
       aTrack.setPOCA(POCA, 4);
-      //if(ttracks[t].chi2Red()<5 && aTrack.getStubRefs().size()>=4 && !ttracks[t].isGhost())
       L1TkTracksForOutput->push_back(aTrack);
     }
-    std::cout<<"Tracks "<<L1TkTracksForOutput->size()<<std::endl;
+    //std::cout<<"Tracks "<<L1TkTracksForOutput->size()<<std::endl;
     iEvent.put( L1TkTracksForOutput, "Level1TTTracks");
   }
 }

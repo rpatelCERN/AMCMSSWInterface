@@ -51,6 +51,7 @@ double LinearizedTrackFitter::fit(const std::vector<double> & vars, const int bi
   }
 
   // Clean the variables removing the 0 values corresponding to the missing layer
+/*
   if (bits > 0) {
     std::vector<double> cleanedVars;
     for (size_t i = 0; i < vars.size() / 3; ++i) {
@@ -63,7 +64,7 @@ double LinearizedTrackFitter::fit(const std::vector<double> & vars, const int bi
     // return fit(cleanedVars, layers, 0., 0.);
     return fit(cleanedVars, layers);
   }
-
+*/
   // return fit(vars, layers, 0., 0.);
   return fit(vars, layers);
 }
