@@ -9,8 +9,10 @@ from AMCMSSWInterface.AMTrackProducer.CommandLineParams import CommandLineParams
 parameters = CommandLineParams()
 inputFiles = parameters.value("inputFiles",
 'file:/fdata/hepx/store/user/rish/AMSIMULATION/CMSSW_6_2_0_SLHC27/src/AMCMSSWInterface/AMTrackProducer/test/AMTC_output.root',
+#'file:/fdata/hepx/store/user/rish/AMSIMULATION/Forked2/CMSSW_6_2_0_SLHC25_patch3/src/AMCMSSWInterface/AMTrackProducer/test/example_L1Roads.root',
 #'file:/fdata/hepx/store/user/rish/CMSSW_6_2_0_SLHC25_patch3/src/Muons/SingleMuonNoPU_tt27_16.root'
 #'file:/fdata/hepx/store/user/rish/Muons/TTIMuons11.root'
+#'file:/fdata/hepx/store/user/rish/CMSSW_6_2_0_SLHC25_patch3/src/SingleMuonPU_tt27_%s.root'
 #'file:/fdata/hepx/store/user/rish/CMSSW_6_2_0_SLHC25_patch3/src/SingleMuonPU_tt27_%s.root'
 )
 outputFile=parameters.value("outputFile","test_ntuple.root")
